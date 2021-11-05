@@ -1,10 +1,8 @@
 source("explore_mirna_data.R")
 
-?DGEList
 library(edgeR)
 
 dge = DGEList(counts = ten.days.sample.df)
-dge
 View(dge$counts)
 
 dge = calcNormFactors(dge)
@@ -25,7 +23,7 @@ head(design)
 # Limma trend
 fit = lmFit(logCPM, design)
 fit = eBayes(fit, trend = TRUE)
-topTable(fit, coef = "probiotic")                                            #basically top og summary
+topTable(fit, coef = "probiotic")                                            #basically top of summary
 
 #including AD as a covariate
 
