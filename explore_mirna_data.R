@@ -88,9 +88,24 @@ hist_expression_level2 = function(dataframe, mirna){
 }
 hist_expression_level2(ten.days.sample.df, 1)
 
-# installing limma
-#if (!requireNamespace("BiocManager", quietly = TRUE))
-#  install.packages("BiocManager")
 
-#BiocManager::install("limma")
 
+#boxplot of most abundant miRNAs
+
+
+sum.reads = apply(ten.days.sample.df, 1, sum)
+
+sorted.sum.reads = sum.reads[order(sum.reads, decreasing = TRUE)]
+
+n.mirna.to.include = 20
+
+
+most.abundant.mirna.names = names(sorted.sum.reads[seq(1, n.mirna.to.include)])
+
+most.abundant.mirnas = ten.days.sample.df[most.abundant.mirna.names,]
+class(as.data.frame(t(most.abundant.mirnas)))
+
+abundant.mirna.long = pivot_longer(data = as.data.frame(t(most.abundant.mirnas)), cols = rownames(most.abundant.mirnas), names_to = "miRNA", values_to = "cpmValue")
+
+
+ggplot(data = abundant.mirna.long, aes(x = miRNA, y = cpmValue )) + geom_boxplot()
