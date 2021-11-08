@@ -3,7 +3,6 @@ path = "\\\\fil.nice.ntnu.no\\nice\\p489\\miRNA 10 days\\data\\copies\\"
 
 #dir.exists(path)
 cpm.data = read.csv(paste0(path, "cpm_countMatrix_new data_subset.txt"), sep = "\t", dec= ",", header = TRUE, row.names = 1)
-View(cpm.data)
 colnames(cpm.data) = str_remove(colnames(cpm.data), "[X]")
 ncol(cpm.data)
 
@@ -21,8 +20,7 @@ mirna.data = cpm.data
 
 meta.data = read.csv(paste0(path, "Breastmilk_overview_10days.csv"), sep = ";", dec = ",", header = TRUE)
 class(meta.data)
-View(meta.data)
-?data.frame
+
 
 
 #extract 10 days samples
@@ -51,8 +49,6 @@ for (i in seq(from = 1,to = length(ten.days.sample.included.nr))) {
 # Define data frame containing only the samples we want
 ten.days.sample.df =  mirna.data[, as.character(ten.days.sample.included.nr)]
 
-View(ten.days.sample.df)
-ncol(ten.days.sample.df)
 
 
 #check for missing values
@@ -62,7 +58,6 @@ sum(is.na(ten.days.sample.df))
 #data frame for only needed metadata
 
 ten.days.meta.data = meta.data[meta.data$mirna1 == 1,]
-View(ten.days.meta.data)
 
 
 
@@ -107,5 +102,9 @@ class(as.data.frame(t(most.abundant.mirnas)))
 
 abundant.mirna.long = pivot_longer(data = as.data.frame(t(most.abundant.mirnas)), cols = rownames(most.abundant.mirnas), names_to = "miRNA", values_to = "cpmValue")
 
+abundant.mirna.long$miRNA = factor(abundant.mirna.long$miRNA, levels = most.abundant.mirna.names)
 
-ggplot(data = abundant.mirna.long, aes(x = miRNA, y = cpmValue )) + geom_boxplot()
+
+ggplot(data = abundant.mirna.long, aes(x = miRNA, y = cpmValue )) + geom_boxplot() + ylab("cpm value") + ggtitle("20 most abundant miRNAs") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+
