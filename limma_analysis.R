@@ -1,5 +1,4 @@
-source("explore_mirna_data.R")
-
+source("load_data.R")
 library(edgeR)
 
 dge = DGEList(counts = ten.days.sample.df)
@@ -8,6 +7,8 @@ View(dge$counts)
 dge = calcNormFactors(dge)
 
 
+
+## offset 0 values before log!!!!! to avoid missing values!! this is not needed
 logCPM = log(ten.days.sample.df)
 View(logCPM)
 
