@@ -1,18 +1,26 @@
 source("load_count_data.R")
 
 
-#plot of library sizes
-
-View(count.df)
+# BARPLOT OF EXPRESSION VALUES OF ONE miRNA
 
 
+df  = data.frame(x =colnames(count.df), y = as.numeric(count.df[8,])) 
 
-hist_expression_level_gg = function(dataframe, mirna){
-  dataframe = as.data.frame(t(dataframe))
-  col = sym(colnames(dataframe)[mirna])
-  p = ggplot(data = dataframe, aes(x = !!col, y = ..density..)) + geom_histogram()
-  return(p)
-}
+ggplot(data = df, aes(x = x, y = y)) + geom_bar(stat = "identity")
+
+
+
+
+
+# BARPLOT OF LIBRARY SIZES
+library.sizes = apply(count.df, 2,sum)
+barplot(count.df)
+
+ggplot(data = data.frame(  lib.s = library.sizes, library = names(library.sizes)), 
+       aes(x =library , y = lib.s)) + geom_bar(stat = "identity") + ylab("Library size") +
+  xlab("Library") + ggtitle("Barplot of library sizes") + theme(axis.text.x=element_blank())
+ggsave("barplot-library-sizes.svg", path = path_plots, height = 4.5, width = 6)
+
 
 
 
