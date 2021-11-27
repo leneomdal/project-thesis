@@ -8,10 +8,11 @@ dge <- DGEList(counts=count.df)
 View(metadata.df)
 
 treatment = ifelse(metadata.df$probiotic ==1, "P", "nP")
-outcome = ifelse(metadata.df$ad_ukwp2yr == 1, "AD", "nAD")
+outcome = ifelse(metadata.df$ad == 1, "AD", "nAD")
 
 groups_p = as.factor(treatment)
 groups = as.factor(paste0(treatment,"_", outcome))
+groups_ad = as.factor(outcome)
 
 dge$samples$group = groups
 
@@ -33,10 +34,11 @@ dim(dge1$counts)
 
 
 View(metadata.df)
+
 groups
 
 # design matrix
-design = model.matrix(~probiotic + ad_ukwp2yr, data = metadata.df)
+design = model.matrix(~probiotic + ad, data = metadata.df)
 head(design)
 
 
@@ -95,3 +97,80 @@ dim(dge2)
 dge = dge1
 dge
 
+
+#Optional? normalization
+# dge = calcNormFactors(dge, method = "TMM")
+
+
+# Plot 
+library(RColorBrewer)
+
+
+lcpm = cpm(dge, log=TRUE)
+col.group = groups_ad       # or= groups     # or = groups_p
+levels(col.group) =  brewer.pal(nlevels(col.group), "Set1")
+col.group = as.character(col.group)
+plotMDS(lcpm, labels=groups, col=col.group)
+title(main="MDS plot")
+
+
+
+# Define design matrix
+
+design.matrix = model.matrix(~probiotic + ad , data = metadata.df)
+
+View(design.matrix)
+
+# design matrix using
+#design.matrix = model.matrix(~0+groups)
+
+
+#Make contrast matrix
+colnames(design.matrix) <- gsub("group", "", colnames(design.matrix))
+
+contr.matrix <- makeContrasts(
+  PvsnP = probiotic,
+  ADvsnAD = ad,
+  nPADvsP = (intercept + ad) - (intercept + probiotic + 0.5* ad),
+  PADvsnPnAD = (intercept + probiotic + ad) - (intercept),
+  PnADvsnPAD = (probiotic + intercept) - (intercept + ad),
+  PnADvsAll = (probiotic + intercept) - (intercept + intercept + ad + intercept + ad + probiotic)/3,
+  
+  levels = colnames(design.matrix))
+
+contr.matrix
+
+colnames(design.matrix)[1] = "intercept"
+
+# Voom method
+
+voom.weights <- voom(dge, design.matrix, plot=TRUE)
+
+#save plot
+svg("C:\\Users\\Lene\\Documents\\Skole\\Prosjektoppgave\\project-thesis-mirna\\plots\\mean-variance-trend.svg")
+v = voom(dge, design.matrix, plot=TRUE)
+# Close the graphics device
+dev.off() 
+
+voom.fit <- lmFit(voom.weights, design.matrix)
+voom.fit <- contrasts.fit(voom.fit, contrasts=contr.matrix)
+eB.fit <- eBayes(voom.fit)
+#save plot
+svg("C:\\Users\\Lene\\Documents\\Skole\\Prosjektoppgave\\project-thesis-mirna\\plots\\final-MV-trend.svg")
+plotSA(eB.fit, main="Final model: Mean-variance trend")
+dev.off()
+
+
+# table for quick comparison, adjusted p-value cutoff is set at 5% by default
+summary(decideTests(eB.fit))
+
+#stricter cut off by treat
+tfit <- treat(voom.fit, lfc=1)
+dt <- decideTests(tfit)
+summary(dt)
+
+
+#Examining individual miRNA
+
+voom.PvsnP = topTable(fit = eB.fit, coef = 5)
+voom.PvsnP
