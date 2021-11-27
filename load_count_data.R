@@ -60,3 +60,5 @@ metadata.df = ten.days.meta.data
 #View(metadata.df)
 #ncol(count.df)
 #nrow(metadata.df)
+
+colnames(metadata.df)[colnames(metadata.df) == 'ad_ukwp2yr'] = 'ad'
