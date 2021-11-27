@@ -12,6 +12,13 @@ colnames(count.data) = str_remove(colnames(count.data), "[X]")
 # check for missing values
 sum(is.na(sample.sheet) == TRUE)             # Two samples miss value for sens2yrs, row 16 and 64
 
+#Check for same samples and same ordering in count matrix and sample sheet
+count.data<-count.data[,order(as.numeric(colnames(count.data)))]
+sum(colnames(count.data) == sample.sheet$samples)
+
+
+
+
 
 
 #Find only the ones included in miRNA sequencing project for 10 day samples, mirna = 1 in overview file
@@ -30,8 +37,7 @@ for (i in seq(from = 1,to = length(ten.days.sample.included.nr))) {
 
 
 # Define data frame containing only the samples we want
-ten.days.sample.df =  count.data[, as.character(ten.days.sample.included.nr)]
-
+ten.days.sample.df = count.data[,which(sample.sheet$day10 == 1)]
 
 
 #check for missing values in these extrated samples
@@ -43,5 +49,14 @@ sum(is.na(ten.days.sample.df))
 ten.days.meta.data = sample.sheet[sample.sheet$day10 ==1,]
 #nrow(ten.days.meta.data)
 
+for(i in 1:ncol(ten.days.sample.df)){
+  if(names(ten.days.sample.df)[i] != ten.days.meta.data$samples[i]){
+    print("not good!")
+  }
+}
+
 count.df = ten.days.sample.df
 metadata.df = ten.days.meta.data
+#View(metadata.df)
+#ncol(count.df)
+#nrow(metadata.df)
