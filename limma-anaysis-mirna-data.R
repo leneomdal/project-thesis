@@ -139,7 +139,7 @@ contr.matrix.g
 
 
 
-# Voom method
+# VOOM METHOD
 
 voom.weights = voom(dge, design.matrix, plot=TRUE)
 voom.weights.g = voom(dge.g, design.matrix.g, plot = TRUE) 
@@ -177,11 +177,23 @@ summary(dt)
 voom.PvsnP = topTable(fit = eB.fit, coef = 1)
 voom.PvsnP
 
-voom.PvsnP.g = topTable(fit = eB.fit.g, coef = 2)
+voom.PnADvsnPAD.g = topTable(fit = eB.fit.g, coef = 1)
 voom.PvsnP.g
 
 plotMD(tfit, column=1, status=dt[,1], main=colnames(tfit)[1], 
        xlim=c(-8,13))
+
+
+# LIMMA-TREND
+
+lpcm = cpm(dge.g, log = TRUE)
+limma.fit = lmFit(lcpm, design.matrix.g)
+limma.fit <- eBayes(limma.fit, trend=TRUE)
+limma.fit.contr = contrasts.fit(limma.fit, contrasts = contr.matrix.g)
+limma.fit.contr = eBayes(limma.fit.contr, trend = TRUE)
+topTable(limma.fit.contr, coef = 1)
+
+
 
 
 
