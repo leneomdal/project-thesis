@@ -1,4 +1,5 @@
 library(limma)
+library(tidyverse)
 
 path = "C:\\Users\\Lene\\Documents\\Skole\\Prosjektoppgave\\project-thesis-mirna\\new-data\\"
 
