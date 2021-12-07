@@ -39,6 +39,15 @@ ggplot(data = data.frame(  lib.s = library.sizes, library = names(library.sizes)
   xlab("Library") + ggtitle("Barplot of library sizes") + theme(axis.text.x=element_blank())
 ggsave("barplot-library-sizes.svg", path = path_plots, height = 4.5, width = 6)
 
+# BARPLOT OF LIBRARY SIZES after lcpm
+library.sizes.lcpm = apply(lcpm, 2,sum)
+barplot(library.sizes.lcpm)
+
+ggplot(data = data.frame(lib.s = library.sizes.lcpm, library = names(library.sizes.lcpm)), 
+       aes(x =library , y = lib.s)) + geom_bar(stat = "identity") + ylab("Library size log-cpm") +
+  xlab("Library") + ggtitle("Barplot of library sizes") + theme(axis.text.x=element_blank())
+ggsave("barplot-library-sizes-lcpm.svg", path = path_plots, height = 4.5, width = 6)
+
 
 
 
