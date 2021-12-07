@@ -109,10 +109,11 @@ design.intr
 lpcm = cpm(dge, log = TRUE)
 fit = lmFit(lcpm, design.intr)
 fit = eBayes(fit, trend = TRUE)
-interaction.t = topTable(fit, coef = 7)
+interaction.t = topTable(fit, coef = 7, adjust.method = "bonferroni")
 interaction.t
 
-xtable(interaction.t %>% slice_head(n = 10))
+xtable(interaction.t %>% slice_head(n = 10), digits = 3)
+?xtable
 
 
 
@@ -156,7 +157,7 @@ limma.fit = lmFit(lcpm, design.matrix)
 fit.vanilla = eBayes(limma.fit, trend = FALSE)
 fit.vanilla$s2.prior
 
-xtable(topTable(fit.vanilla, coef = 2, adjust.method = "BH") %>% slice_head(n = 10))
+xtable(topTable(fit.vanilla, coef = 2, adjust.method = "bonferroni") %>% slice_head(n = 10), digits = 3)
 
 
 
@@ -166,7 +167,7 @@ fit.eB = eBayes(limma.fit, trend = TRUE)
 #table for p vs nP
 topTable(fit.eB, coef = 2)
 topTable(fit.eB, coef = 2, adjust.method = "bonferroni")
-xtable(topTable(fit.eB, coef = 2) %>% slice_head(n = 10))
+xtable(topTable(fit.eB, coef = 2) %>% slice_head(n = 10), digits = 3)
 
 
 
@@ -223,8 +224,8 @@ voom.fit = lmFit(voom.weights, design.matrix)
 #voom.fit = contrasts.fit(voom.fit, contrasts=contr.matrix)
 eB.voom.fit = eBayes(voom.fit)
 
-topTable(eB.voom.fit, coef = 2)
-xtable(topTable(eB.voom.fit, coef = 2) %>% slice_head(n = 10))
+topTable(eB.voom.fit, coef = 2, adjust.method = "BH")
+xtable(topTable(eB.voom.fit, coef = 2) %>% slice_head(n = 10), digits = 3)
 
 #voom.fit.g = lmFit(voom.weights.g, design.matrix.g)
 #voom.fit.g = contrasts.fit(voom.fit.g, contrasts = contr.matrix.g)
