@@ -1,3 +1,4 @@
+rm(list=ls()) 
 library(edgeR)
 library(xtable)
 library(RColorBrewer)
@@ -13,13 +14,13 @@ treatment = ifelse(metadata.df$probiotic ==1, "P", "nP")
 outcome = ifelse(metadata.df$ad == 1, "AD", "nAD")
 
 groups_p = as.factor(treatment)
-groups = as.factor(paste0(treatment,"_", outcome))
-groups_ad = as.factor(outcome)
+#groups = as.factor(paste0(treatment,"_", outcome))
+#groups_ad = as.factor(outcome)
 
 
 # Assign groups to dge.g
 dge.g = dge
-dge.g$samples$group = groups
+#dge.g$samples$group = groups
 
 
 # convert to cpm and log cpm ( voom recomputes its own log-CPM values internally with a smaller prior count)
@@ -37,9 +38,9 @@ keep = rowSums(cpm(dge)>500)>=6
 dge$counts = dge$counts[keep,]
 dim(dge)
 
-keep.g = rowSums(cpm(dge.g)>500)>=6
-dge.g$counts = dge.g$counts[keep,]
-dim(dge.g)
+#keep.g = rowSums(cpm(dge.g)>500)>=6
+#dge.g$counts = dge.g$counts[keep,]
+#dim(dge.g)
 
 
 
@@ -58,10 +59,10 @@ dim(dge.g)
 
 
 # check that design matrix gives same result as groups
-treat = ifelse(design[,2] == 1, "P", "nP")
-outc = ifelse(design[,3] == 1, "AD", "nAD")
-groups_design = as.factor(paste0(treatment,"_", outcome))
-groups == groups_design
+#treat = ifelse(design[,2] == 1, "P", "nP")
+#outc = ifelse(design[,3] == 1, "AD", "nAD")
+#groups_design = as.factor(paste0(treatment,"_", outcome))
+#groups == groups_design
 
 
 
@@ -91,16 +92,16 @@ title(main="MDS plot")
 
 
 # Define design matrix
-design.matrix = model.matrix(~probiotic + ad, data = metadata.df)
+design.matrix = model.matrix(~probiotic + ad +matatopy + sex +sib, data = metadata.df)
 design.matrix
 
 # design matrix using the groups
-design.matrix.g = model.matrix(~0+groups)
-colnames(design.matrix.g) <- gsub("groups", "", colnames(design.matrix.g))
+#design.matrix.g = model.matrix(~0+groups)
+#colnames(design.matrix.g) <- gsub("groups", "", colnames(design.matrix.g))
 
 # Design matrix including interaction
-design.intr = model.matrix(~probiotic + ad + probiotic*ad , data = metadata.df)
-
+design.intr = model.matrix(~probiotic*ad +matatopy + sex +sib, data = metadata.df)
+design.intr
 
 
 # Fit model to examine interaction term (limma-trend)
@@ -108,16 +109,15 @@ design.intr = model.matrix(~probiotic + ad + probiotic*ad , data = metadata.df)
 lpcm = cpm(dge, log = TRUE)
 fit = lmFit(lcpm, design.intr)
 fit = eBayes(fit, trend = TRUE)
-interaction.t = topTable(fit, coef = 4)
-
-
+interaction.t = topTable(fit, coef = 7)
+interaction.t
 
 xtable(interaction.t %>% slice_head(n = 10))
 
 
 
 
-#Make contrast matrix
+#Make contrast matrix, denne må endres om alle covariater er med, bare slett de siste
 colnames(design.matrix)[1] = "intercept"
 contr.matrix <- makeContrasts(
   PvsnP = probiotic,
@@ -128,35 +128,52 @@ contr.matrix <- makeContrasts(
   PnADvsAll = (probiotic + intercept) - (intercept + intercept + ad + intercept + ad + probiotic)/3,
   levels = colnames(design.matrix))
 contr.matrix
-design.matrix
 
+# contrast matrix including interaction, denne må også endres, KAN EGT SLETTE HELE
+contr.matrix <- makeContrasts(
+  PvsnP = probiotic,
+  ADvsnAD = ad,
+  nPADvsP = (intercept + ad) - (intercept + probiotic + 0.5* ad),
+  PADvsnPnAD = (intercept + probiotic + ad) - (intercept),
+  PnADvsnPAD = (probiotic + intercept) - (intercept + ad),
+  PnADvsAll = (probiotic + intercept) - (intercept + intercept + ad + intercept + ad + probiotic)/3,
+  levels = colnames(design.matrix))
+contr.matrix
 
 #Alternative contrast matrix using groups
-contr.matrix.g <- makeContrasts(
-  PnADvsnPAD = P_nAD - nP_AD,
-  PvsnP = 0.5*(P_AD+P_nAD)-0.5*(nP_AD+nP_nAD),
-  ADvsnAD = 0.5*(P_AD + nP_AD) - 0.5*(P_nAD + nP_nAD),
-  PnADvsAll = P_nAD - (P_AD + nP_nAD + nP_AD)/3,
-  levels = colnames(design.matrix.g))
+#contr.matrix.g <- makeContrasts(
+#  PnADvsnPAD = P_nAD - nP_AD,
+#  PvsnP = 0.5*(P_AD+P_nAD)-0.5*(nP_AD+nP_nAD),
+#  ADvsnAD = 0.5*(P_AD + nP_AD) - 0.5*(P_nAD + nP_nAD),
+#  PnADvsAll = P_nAD - (P_AD + nP_nAD + nP_AD)/3,
+#  levels = colnames(design.matrix.g))
+
 
 
 # vanilla limma
+lcpm = cpm(dge, log = TRUE)
+limma.fit = lmFit(lcpm, design.matrix)
 fit.vanilla = eBayes(limma.fit, trend = FALSE)
+fit.vanilla$s2.prior
+
+xtable(topTable(fit.vanilla, coef = 2, adjust.method = "BH") %>% slice_head(n = 10))
+
 
 
 # LIMMA-TREND
-lcpm = cpm(dge, log = TRUE)
 limma.fit = lmFit(lcpm, design.matrix)
 fit.eB = eBayes(limma.fit, trend = TRUE)
 #table for p vs nP
 topTable(fit.eB, coef = 2)
-
+topTable(fit.eB, coef = 2, adjust.method = "bonferroni")
+xtable(topTable(fit.eB, coef = 2) %>% slice_head(n = 10))
 
 
 
 # HVORDAN FUNGERER LIMMA TREND?
+means.prior.df = data.frame(means = limma.fit$Amean, s2.prior = fit.eB$s2.prior, s2.posterior = fit.eB$s2.post)
 plot(means.prior.df$means, limma.fit$sigma )
-plot(lowess(limma.fit$Amean, limma.fit$sigma))
+plot(lowess(limma.fit$Amean, sqrt(limma.fit$sigma)))
 points(limma.fit$Amean, sqrt(means.prior.df$s2.post))
 
 
@@ -167,21 +184,21 @@ dev.off()
 
 #save plot LIMMA TREND
 svg("C:\\Users\\Lene\\Documents\\Skole\\Prosjektoppgave\\project-thesis-mirna\\plots\\final-MV-trend-limma-trend.svg")
-plotSA(fit.eB, main="Final model: Mean-variance trend limma-trend")
+plotSA(fit.eB, main="limma-trend: Mean-variance trend", ylab = "Sqrt( standard deviation)")
+legend("topright", as.character(c("limma-trend curve")),col = unique(col.group) , pch = "-", cex = 1)
 dev.off()
 
 
 
-means.prior.df = data.frame(means = apply(lcpm, 1, mean), s2.prior = fit.eB$s2.prior, s2.posterior = fit.eB$s2.post)
-View(means.prior.df)
-
 # mean-variance trend in limma trend
-ggplot(data = means.prior.df, aes(x = means, y = s2.prior)) + geom_point() + 
+ggplot(data = means.prior.df, aes(x = means, y = (s2.prior)^(1/4))) + geom_point() + 
   ggtitle("Estimated prior against mean expression for each miRNA") +
-  xlab("Average log2-expression levels") + ylab("s^2 prior")
+  xlab("Average log2-expression levels") + ylab("s^(1/2) prior")
 ggplot(data = means.prior.df, aes(x = means, y = s2.posterior)) + geom_point() + 
   ggtitle("Estimated posterior against mean expression for each miRNA") +
   xlab("Average log2-expression levels") + ylab("s^2 posterior")
+
+
 
 
 
@@ -198,13 +215,16 @@ voom.weights = voom(dge, design.matrix, plot=TRUE)
 
 #save plot
 svg("C:\\Users\\Lene\\Documents\\Skole\\Prosjektoppgave\\project-thesis-mirna\\plots\\mean-variance-trend-by-voom.svg")
-v = voom(dge.g, design.matrix.g, plot=TRUE)
+v = voom(dge, design.matrix, plot=TRUE)
 # Close the graphics device
 dev.off() 
 
 voom.fit = lmFit(voom.weights, design.matrix)
-voom.fit = contrasts.fit(voom.fit, contrasts=contr.matrix)
-eB.fit = eBayes(voom.fit)
+#voom.fit = contrasts.fit(voom.fit, contrasts=contr.matrix)
+eB.voom.fit = eBayes(voom.fit)
+
+topTable(eB.voom.fit, coef = 2)
+xtable(topTable(eB.voom.fit, coef = 2) %>% slice_head(n = 10))
 
 #voom.fit.g = lmFit(voom.weights.g, design.matrix.g)
 #voom.fit.g = contrasts.fit(voom.fit.g, contrasts = contr.matrix.g)
@@ -212,38 +232,13 @@ eB.fit = eBayes(voom.fit)
 
 #save plot
 svg("C:\\Users\\Lene\\Documents\\Skole\\Prosjektoppgave\\project-thesis-mirna\\plots\\final-MV-trend-voom.svg")
-plotSA(eB.fit, main="Final model: Mean-variance trend voom")
+plotSA(eB.fit, main="Final model voom: Mean-variance trend")
 dev.off()
 
 
 
 # table for quick comparison, adjusted p-value cutoff is set at 5% by default
 summary(decideTests(eB.fit.g))
-
-
-# Results by Voom
-voom.PvsnP = topTable(fit = eB.fit, coef = 1)
-voom.PvsnP
-
-
-
-
-
-
-#Including more covariates
-
-design.matrix.full = model.matrix(~0+groups + sex + sib + matatopy, data = metadata.df)
-design.matrix.full
-
-voom.full = voom(dge.g, design.matrix.full, plot = TRUE) 
-voom.fit.full = lmFit(voom.full, design.matrix.g)
-voom.fit.full = contrasts.fit(voom.fit.full, contrasts = contr.matrix.g)
-eB.fit.full = eBayes(voom.fit.full, trend = FALSE)
-
-plotSA(eB.fit.full, main="Final model: Mean-variance trend")
-summary(decideTests(eB.fit.full))
-
-topTable(eB.fit.full, coef = 1)
 
 
 
