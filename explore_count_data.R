@@ -8,13 +8,31 @@ df  = data.frame(x =colnames(count.df), y = as.numeric(count.df[8,]))
 
 ggplot(data = df, aes(x = x, y = y)) + geom_bar(stat = "identity")
 
+# HOW MANY IN ECAH GROUP
+sum(metadata.df$probiotic ==0)
+# 30 in each
 
+
+#TEST FOR GENDER DIFFERENCES
+
+sum(metadata.df$sex == 0)
+# 27 males overall
+sum(metadata.df$sex == 1 & metadata.df$probiotic == 1)
+#16 males in P group
+
+sum(metadata.df$sex == 0 & metadata.df$probiotic == 0)
+# 11 males in nP group
+
+#HOW MANY MOTHERS have history of atopic dermatitis
+
+sum(metadata.df$probiotic == 0 & metadata.df$matatopy == 1)
+# 9 in P group
 
 
 
 # BARPLOT OF LIBRARY SIZES
 library.sizes = apply(count.df, 2,sum)
-barplot(count.df)
+barplot(library.sizes)
 
 ggplot(data = data.frame(  lib.s = library.sizes, library = names(library.sizes)), 
        aes(x =library , y = lib.s)) + geom_bar(stat = "identity") + ylab("Library size") +
